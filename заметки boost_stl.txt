@@ -1,0 +1,2 @@
+Установка BOOST в VSCODE
+Установка и настройка Cmake в VSCODE
