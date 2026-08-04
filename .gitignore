@@ -1,0 +1,32 @@
+# Скомпилированные файлы
+*.exe
+*.o
+*.obj
+*.out
+*.a
+*.lib
+*.dll
+*.so
+*.dylib
+*.dev
+*.layout
+
+# Отладка и временные файлы
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*.pdb
+*.ilk
+*.exp
+*.idb
+
+# Папки IDE и сборщиков
+.vscode/
+.idea/
+.vs/
+build/
+CMakeFiles/
+cmake-build-*/
+Makefile
