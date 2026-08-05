@@ -21,10 +21,6 @@ find_package(Boost CONFIG REQUIRED COMPONENTS unit_test_framework)
 #target_link_libraries(Class_generator_for_boost PRIVATE Boost::unit_test_framework Boost::boost)
 #target_compile_features(Class_generator_for_boost PRIVATE cxx_std_20)
 
-#add_executable(mental_model_iterator mental_model_iterator.cpp)
-#target_link_libraries(mental_model_iterator PRIVATE Boost::unit_test_framework Boost::boost)
-#target_compile_features(mental_model_iterator PRIVATE cxx_std_20)
-
-add_executable(main main.cpp)
-target_link_libraries(main PRIVATE Boost::unit_test_framework Boost::boost)
-target_compile_features(main PRIVATE cxx_std_20)
+add_executable(mental_model_iterator mental_model_iterator.cpp)
+target_link_libraries(mental_model_iterator PRIVATE Boost::unit_test_framework Boost::boost)
+target_compile_features(mental_model_iterator PRIVATE cxx_std_20)
