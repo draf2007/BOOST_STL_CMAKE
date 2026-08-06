@@ -7,6 +7,11 @@
 #include <fstream>
 #include <stdexcept>
 #include <set>
+#include <algorithm>
+#include <utility>
+#include <boost/program_options.hpp>
+
+namespace po = boost::program_options;
 
 /*ДЗ по boost и stl
 
@@ -18,8 +23,41 @@
 Выводить статистику в файл или на экран в удобочитаемом виде.
 
 Сначала надо получить текст
-создаём строку
-std::string text = "Hello, world!  This is a test. Hello world.";
+Функция чтения из файла, читай свои записи в Obsidian)))
+std::string readFile(const std::string& filename){
+    std::ifstream file(filename);
+    if(!file.is_open()){ throw std::runtime_error("Не удалось открыть файл!"); }
+
+    std::string content;
+    std::string line;
+    while (std::getline(file,line))
+    {
+        content += line;
+        content += ' '; // добавляем пробел что бы сшить строки и предотвратить слипание строк
+    }
+    return content;
+}
+
+Функция записи в файл, читай свои записи в Obsidian)))
+void writeToFile(const std::vector<std::pair<std::string, int>>& sorted,
+                 const std::string& filename)
+{
+    std::ofstream file(filename);  // открываем "трубу" для записи
+
+    // Если не удалось создать/открыть файл — сообщаем об ошибке
+    if (!file.is_open()) {
+        throw std::runtime_error("Не удалось создать файл: " + filename);
+    }
+
+    // Заголовок для удобочитаемости (требование ДЗ)
+    file << "=== Статистика частоты слов ===\n";
+    file << "Уникальных слов: " << sorted.size() << "\n";
+    file << "--------------------------------\n";
+
+    // Записываем каждое слово и его частоту
+    for (const auto& [word, count] : sorted) {
+        file << word << ": " << count << "\n";
+    }
 
 Функция ниже определяет что за символ ей пришел если это пробел или спец символ возвращает true
 нужна для нарески строки на элементы для добавления в вектор в в функции cut_text()
@@ -88,23 +126,68 @@ std::string toLower(const std::string& word){ - на вход ждём стро�
 
 }
 
-Функция чтения из файла, читай свои записи в Obsidian)))
-std::string readFile(const std::string& filename){
-    std::ifstream file(filename);
-    if(!file.is_open()){ throw std::runtime_error("Не удалось открыть файл!"); }
+Функция проверки текста в файле на наличие слов из черного списка
+std::vector<std::string> filterStopWords(const std::vector<std::string>& words, const std::set<std::string>& stopWords) - на вход ждём вектор строк и множество содержащее черный список слов
+{
+    std::vector<std::string> result; - вектор для хранения резултата фильтрации
 
-    std::string content;
-    std::string line;
-    while (std::getline(file,line))
+    for (const auto& word : words) - проходим в цикле по вектору и проверяем каждый элемент на нахождение в черном списке
     {
-        content += line;
-        content += ' '; // добавляем пробел что бы сшить строки и предотвратить слипание строк
+        if (!stopWords.contains(word)) - если в списке нет
+        {
+            result.push_back(word); - добавляем в вектор result
+        }
     }
-    return content;
+    return result;
+}
+
+сортировка по частоте 
+std::vector<std::pair<std::string,int>> sortByFreq(const std::map<std::string, int>& freq){ - на вход ждём map
+
+    std::vector<std::pair<std::string,int>> result(freq.begin(), freq.end()); - копируем map в vector, теперь в каждом элементе вектора лежит пара из map в виде std::pair
+                                                                                std::pair это шаблон класса который позволяет хранить два связанных значения разных типов.
+                                                                                map это контейнер для нескольких значений типа ключ : значение, 
+                                                                                а std::pair это что-то похожее на переменную, только хранящую в себе пару связанных значений
+                                                                                к которым можно обратится a.first b.second,
+                                                                                вектору всё равно что лежит в его элементах, это даёт возможность обратится к элементу вектора
+
+    std::sort(result.begin(),result.end(),[](const auto& a, const auto& b){ return a.second > b.second; }); - функция сортировки описана у меня в заметке Obsidian
+
+    return result;
 }
 
 
+Структурные привязки (structured bindings) — это введенная в стандарте C++17 языковая конструкция, 
+                                             которая позволяет распаковать несколько значений из массивов, 
+                                             пар, кортежей или структур в отдельные именованные переменные за один шаг
+Пример:
+std::pair<int, const char*> get_data() {
+    return {1, "Oмск"};
+}
+
+int main() {
+        
+    auto [id, name] = get_data(); - Распаковываем пару в переменные id и name
+    std::cout << id << ": " << name << '\n';
+}
+
+или как у меня в цикле:
+std::cout << "Сортировка по частоте: " << std::endl;
+    for (const auto& [word, count] : topWord) - topWord это вектор хранящий в своих элементах std::pair
+    {
+        std::cout << word <<": "<< count << std::endl;
+    }
+тут в цикле я обращаюсь к каждому элементу вектора, и при помощи structured bindings вытаскиваю два связанных значения из std::pair (.first и .second)
 */
+
+std::vector<std::pair<std::string,int>> sortByFreq(const std::map<std::string, int>& freq){
+
+    std::vector<std::pair<std::string,int>> result(freq.begin(), freq.end());
+
+    std::sort(result.begin(),result.end(),[](const auto& a, const auto& b){ return a.second > b.second; });
+
+    return result;
+}
 
 std::vector<std::string> filterStopWords(
     const std::vector<std::string>& words,
@@ -115,7 +198,7 @@ std::vector<std::string> filterStopWords(
 
     for (const auto& word : words)
     {
-        if (!stopWords.count(word))
+        if (!stopWords.contains(word))
         {
             result.push_back(word);
         }
@@ -138,6 +221,55 @@ std::string readFile(const std::string& filename){
     return content;
 }
 
+std::set<std::string> readStopWords(const std::string& filename) {
+    std::ifstream file(filename);  // открываем файл со списком
+
+    if (!file.is_open()) {
+        throw std::runtime_error("Не удалось открыть файл стоп-слов: " + filename);
+    }
+
+    std::set<std::string> stopWords;  // чёрный список
+    std::string word;
+
+    // Читаем файл построчно: каждая строка = одно стоп-слово
+    while (std::getline(file, word)) {
+        // ВАЖНО ДЛЯ WINDOWS: убираем \r в конце строки.
+        // В Windows конец строки = \r\n, getline читает до \n,
+        // но \r остаётся в строке. Без этого "и\r" != "и".
+        if (!word.empty() && word.back() == '\r') {
+            word.pop_back();
+        }
+
+        // Пропускаем пустые строки
+        if (!word.empty()) {
+            stopWords.insert(word);  // добавляем в чёрный список
+        }
+    }
+
+    return stopWords;
+}
+
+void writeToFile(const std::vector<std::pair<std::string, int>>& sorted,
+                 const std::string& filename)
+{
+    std::ofstream file(filename);  // открываем "трубу" для записи
+
+    // Если не удалось создать/открыть файл — сообщаем об ошибке
+    if (!file.is_open()) {
+        throw std::runtime_error("Не удалось создать файл: " + filename);
+    }
+
+    // Заголовок для удобочитаемости (требование ДЗ)
+    file << "=== Статистика частоты слов ===\n";
+    file << "Уникальных слов: " << sorted.size() << "\n";
+    file << "--------------------------------\n";
+
+    // Записываем каждое слово и его частоту
+    for (const auto& [word, count] : sorted) {
+        file << word << ": " << count << "\n";
+    }
+}
+
 std::string toLower(const std::string& word){
     std::string result = word;
     for (char& c : result)
@@ -148,40 +280,26 @@ std::string toLower(const std::string& word){
     
 }
 
-// ============================================================
-// ТОКЕНИЗАТОР
-// Ментальная модель: "ножницы, режущие ленту текста"
-// ============================================================
-
-// Вопрос: "Является ли этот символ разделителем?"
-// Разделитель = всё, что НЕ буква и НЕ цифра.
-// (пробелы, знаки препинания, табуляция, перевод строки и т.д.)
 bool isDelimiter(char c) {
     unsigned char uc = static_cast<unsigned char>(c);
     return std::isspace(uc) || std::ispunct(uc);
 }
 
-// Разбивает текст на слова по любым разделителям
 std::vector<std::string> tokenize(const std::string& text) {
-    std::vector<std::string> words;   // корзинка для кусочков
-    std::string current_word;         // текущий кусочек, который мы "режем"
-
+    std::vector<std::string> words;
+    std::string current_word;
     for (char c : text) {
         if (isDelimiter(c)) {
-            // Встретили разделитель -> отрезаем текущий кусочек
             if (!current_word.empty()) {
                 words.push_back(toLower(current_word));
-                current_word.clear();  // готовимся резать следующий кусок
+                current_word.clear();  
             }
-            // Если кусочек пустой (два разделителя подряд) — просто идём дальше
+            
         } else {
-            // Буква или цифра -> добавляем к текущему кусочку
+            
             current_word += c;
         }
     }
-
-    // Не забываем последнее слово!
-    // После него может не быть разделителя (конец ленты)
     if (!current_word.empty()) {
         words.push_back(toLower(current_word));
     }
@@ -199,36 +317,93 @@ std::map<std::string, int> countWord(const std::vector<std::string>& word){
     return freq;
 }
 
-// ============================================================
-// MAIN
-// ============================================================
-int main() {
+#ifndef WORDFREQ_TESTS
+int main(int argc, char* argv[]) {
     SetConsoleOutputCP(65001);
     SetConsoleCP(65001);
 
-    // Читаем текст из файла
+    
+    po::options_description desc("Доступные параметры");
+    desc.add_options()
+        ("help,h", "Показать эту справку")
+        ("input,i", po::value<std::string>()->default_value("sample.txt"),
+            "Входной текстовый файл")
+        ("output,o", po::value<std::string>()->default_value("output.txt"),
+            "Выходной файл со статистикой")
+        ("stopwords,s", po::value<std::string>()->default_value("stop_words.txt"),
+            "Файл Blacklist");
+
+    po::variables_map vm;
+        try {
+            po::store(po::parse_command_line(argc, argv, desc), vm);
+            po::notify(vm);
+        } catch (const std::exception& ex) {
+            std::cout << "Ошибка параметров: " << ex.what() << std::endl;
+            std::cout << desc << std::endl;
+            return 1;
+        }
+
+    if (vm.count("help")) {
+        std::cout << desc << std::endl;
+        return 0;
+    }
+
+    std::string inputFile     = vm["input"].as<std::string>();
+    std::string outputFile    = vm["output"].as<std::string>();
+    std::string stopwordsFile = vm["stopwords"].as<std::string>();
+
+    std::cout << "Входной файл:   " << inputFile << std::endl;
+    std::cout << "Выходной файл:  " << outputFile << std::endl;
+    std::cout << "Файл стоп-слов: " << stopwordsFile << std::endl;
+    std::cout << std::endl;
+
     std::string text;
     try {
-        text = readFile("sample.txt");
+        text = readFile(inputFile);
     } catch (const std::exception& ex) {
-        std::cout << "Ошибка: " << ex.what() << "\n";
+        std::cout << "Ошибка: " << ex.what() << std::endl;
         return 1;
     }
 
-    std::cout << "Прочитано символов: " << text.size() << "\n";
+    std::cout << "Прочитано символов: " << text.size() << std::endl;
 
-    // Этап 1: режем на слова
     std::vector<std::string> words = tokenize(text);
-    std::cout << "Слов всего: " << words.size() << "\n";
+    std::cout << "Слов всего: " << words.size() << std::endl;
 
-    // Этап 2: считаем частоту
-    auto freq = countWord(words);
-    std::cout << "Уникальных слов: " << freq.size() << "\n";
+    std::set<std::string> stopWords;
+        try {
+           stopWords = readStopWords(stopwordsFile);
+            } catch (const std::exception& ex) {
+    std::cout << "Ошибка: " << ex.what() << std::endl;
+            return 1;
+            }
+    std::cout << "Загружено стоп-слов: " << stopWords.size() << "\n";
 
-    // Вывод частот
+    std::vector<std::string> filtered = filterStopWords(words, stopWords);
+    std::cout << "Слов после фильтрации: " << filtered.size() << std::endl;
+
+    auto freq = countWord(filtered);
+    std::cout << "Уникальных слов: " << freq.size() << std::endl;
+
     for (const auto& [word, count] : freq) {
-        std::cout << "  " << word << ": " << count << "\n";
+        std::cout << word << ": " << count << std::endl;
     }
+
+    auto topWord = sortByFreq(freq);
+
+    std::cout << "Сортировка по частоте: " << std::endl;
+    for (const auto& [word, count] : topWord)
+    {
+        std::cout << word <<": "<< count << std::endl;
+    }
+
+    try {
+        writeToFile(topWord, outputFile);
+        std::cout << "\nРезультат записан в output.txt\n";
+    } catch (const std::exception& ex) {
+        std::cout << "Ошибка записи: " << ex.what() << std::endl;
+    }
+    
     
     /*std::string text = "Hello, мир!  Это test. Привет_world. Hello мир.";
 
@@ -247,3 +422,4 @@ int main() {
     }*/
     return 0;
 }
+#endif
